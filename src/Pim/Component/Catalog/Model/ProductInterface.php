@@ -27,6 +27,10 @@ interface ProductInterface extends
     CategoryAwareInterface,
     EntityWithValuesInterface
 {
+    public function registerEvent($event);
+
+    public function getEvents();
+
     /**
      * Get the ID of the product
      *
