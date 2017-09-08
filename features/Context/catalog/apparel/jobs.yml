@@ -319,3 +319,8 @@ jobs:
         alias:     add_to_variant_group
         label:     Mass add products to variant group
         type:      mass_edit
+    compute_product_models_descendants_completeness:
+        connector: compute descendants completeness
+        alias:     compute_product_models_descendants_completeness
+        label:     Compute product models descendants completeness
+        type:      compute_product_models_descendants_completeness

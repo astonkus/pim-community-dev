@@ -141,3 +141,8 @@ jobs:
             realTimeVersioning: true
             decimalSeparator: .
             dateFormat: yyyy-MM-dd
+    compute_product_models_descendants_completeness:
+        connector: compute descendants completeness
+        alias:     compute_product_models_descendants_completeness
+        label:     Compute product models descendants completeness
+        type:      compute_product_models_descendants_completeness
