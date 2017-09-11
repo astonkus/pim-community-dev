@@ -17,6 +17,9 @@ class EnabledEvent extends DomainEvent
     /** @var ProductInterface */
     private $product;
 
+    /**
+     * @param ProductInterface $product
+     */
     public function __construct(ProductInterface $product)
     {
         $this->product = $product;
