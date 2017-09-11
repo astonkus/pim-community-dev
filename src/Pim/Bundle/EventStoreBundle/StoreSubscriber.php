@@ -3,6 +3,8 @@
 namespace Pim\Bundle\EventStoreBundle;
 
 use Pim\Bundle\UserBundle\Context\UserContext;
+use Pim\Component\Catalog\Event\Product\AssociatedToAGroupEvent;
+use Pim\Component\Catalog\Event\Product\AssociatedToAProductEvent;
 use Pim\Component\Catalog\Event\Product\ChangedFamilyEvent;
 use Pim\Component\Catalog\Event\Product\ClassifiedEvent;
 use Pim\Component\Catalog\Event\Product\CompletedForChannelAndLocale;
@@ -14,6 +16,8 @@ use Pim\Component\Catalog\Event\Product\DisabledEvent;
 use Pim\Component\Catalog\Event\Product\EnabledEvent;
 use Pim\Component\Catalog\Event\Product\FulfilledExistingValueEvent;
 use Pim\Component\Catalog\Event\Product\FulfilledNewValueEvent;
+use Pim\Component\Catalog\Event\Product\UnassociatedToAGroupEvent;
+use Pim\Component\Catalog\Event\Product\UnassociatedToAProductEvent;
 use Pim\Component\Catalog\Event\Product\UnclassifiedEvent;
 use Pim\Component\Catalog\Event\Product\UncompletedForChannelAndLocale;
 use Psr\Log\LoggerInterface;
@@ -69,6 +73,10 @@ class StoreSubscriber implements EventSubscriberInterface
             UncompletedForChannelAndLocale::class => 'store',
             EnabledEvent::class => 'store',
             DisabledEvent::class => 'store',
+            AssociatedToAProductEvent::class => 'store',
+            AssociatedToAGroupEvent::class => 'store',
+            UnassociatedToAProductEvent::class => 'store',
+            UnassociatedToAGroupEvent::class => 'store',
         ];
     }
 
@@ -102,7 +110,16 @@ class StoreSubscriber implements EventSubscriberInterface
             $message['data']['category']= (string)$event->getCategory()->getCode();
         }
         if (method_exists($event, 'getIdentifier')) {
-            $message['data']['value']= $this->valueNormalizer->normalize($event->getIdentifier());
+            $message['data']['identifier']= $this->valueNormalizer->normalize($event->getIdentifier());
+        }
+        if (method_exists($event, 'getAssociatedProduct')) {
+            $message['data']['associated_product_identifier']= $event->getAssociatedProduct()->getIdentifier();
+        }
+        if (method_exists($event, 'getAssociatedGroup')) {
+            $message['data']['associated_group_code']= $event->getAssociatedGroup()->getCode();
+        }
+        if (method_exists($event, 'getAssociationType')) {
+            $message['data']['association_type']= $event->getAssociationType()->getCode();
         }
 
         $this->logger->info(json_encode($message), []);
