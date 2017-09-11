@@ -9,6 +9,7 @@ use Akeneo\Component\Versioning\Model\VersionableInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Pim\Bundle\CommentBundle\Model\CommentSubjectInterface;
+use Pim\Component\Catalog\Event\DomainEvent;
 
 /**
  * Product interface
@@ -27,10 +28,6 @@ interface ProductInterface extends
     CategoryAwareInterface,
     EntityWithValuesInterface
 {
-    public function registerEvent($event);
-
-    public function getEvents();
-
     /**
      * Get the ID of the product
      *
@@ -285,4 +282,19 @@ interface ProductInterface extends
      * @return ProductInterface
      */
     public function addUniqueData(ProductUniqueDataInterface $uniqueData);
+
+    /**
+     * @param DomainEvent $event
+     */
+    public function registerEvent(DomainEvent $event);
+
+    /**
+     * @return DomainEvent[]
+     */
+    public function getEvents();
+
+    /**
+     * Clear the events
+     */
+    public function clearEvents();
 }
