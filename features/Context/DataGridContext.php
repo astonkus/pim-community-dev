@@ -845,7 +845,7 @@ class DataGridContext extends PimContext implements PageObjectAware
             );
         }
 
-        $filter->open();
+        $filter->close();
     }
 
     /**
