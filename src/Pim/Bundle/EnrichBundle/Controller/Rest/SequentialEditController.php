@@ -4,6 +4,7 @@ namespace Pim\Bundle\EnrichBundle\Controller\Rest;
 
 use Oro\Bundle\DataGridBundle\Extension\MassAction\MassActionParametersParser;
 use Pim\Bundle\DataGridBundle\Adapter\GridFilterAdapterInterface;
+use Pim\Bundle\DataGridBundle\Normalizer\IdEncoder;
 use Pim\Component\Catalog\Query\ProductQueryBuilderFactoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -50,6 +51,7 @@ class SequentialEditController
     {
         $parameters = $this->parameterParser->parse($request);
         $filters = $this->filterAdapter->adapt($parameters);
+
         $products = [];
         $cursor = $this->getProductsCursor($filters, [
             'locale' => $parameters['dataLocale'],
@@ -58,7 +60,7 @@ class SequentialEditController
         ]);
 
         while ($cursor->valid() && $cursor->key() < 1000) {
-            $products[] = $cursor->current();
+            $products[] = IdEncoder::decode($cursor->current());
             $cursor->next();
         }
 
@@ -72,10 +74,7 @@ class SequentialEditController
      */
     protected function getProductsCursor(array $filters, $context)
     {
-        $options = ['filters' => $filters];
-
-        $productQueryBuilder = $this->pqbFactory->create($options);
-
+        $productQueryBuilder = $this->pqbFactory->create(['filters' => $filters]);
         if (null !== $context['sort']) {
             $field = each($context['sort'])['key'];
             $productQueryBuilder->addSorter($field, $context['sort'][$field], $context);
