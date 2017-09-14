@@ -701,6 +701,7 @@ config:
         pim/product-edit-form/download-pdf:                      pimenrich/js/product/form/download-pdf
         pim/product-edit-form/attributes:                        pimenrich/js/product/form/attributes
         pim/product-edit-form/creation/identifier:               pimenrich/js/product/form/creation/identifier
+        pim/product-edit-form/navigation/variant-breadcrumb:     pimenrich/js/product/form/navigation/variant-breadcrumb
 
         # Product model
         pim/product-model-edit-form/meta/family-variant: pimenrich/js/product-model/form/meta/family-variant
@@ -1042,6 +1043,7 @@ config:
         pim/template/product-create-error:                   pimenrich/templates/product/create-error.html
         pim/template/product/add-select/attribute/line:      pimenrich/templates/product/form/add-select/attribute/line.html
         pim/template/product/form/product-completeness:      pimenrich/templates/product/form/product-completeness.html
+        pim/template/product/form/navigation/variant-breadcrumb: pimenrich/templates/product/form/navigation/variant-breadcrumb.html
         pim/template/attribute-option/form:                  pimenrich/templates/attribute-option/form.html
         pim/template/attribute-option/validation-error:      pimenrich/templates/attribute-option/validation-error.html
         pim/template/attribute-option/index:                 pimenrich/templates/attribute-option/index.html

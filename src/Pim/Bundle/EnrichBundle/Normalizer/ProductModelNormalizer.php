@@ -8,9 +8,13 @@ use Pim\Bundle\EnrichBundle\Provider\Form\FormProviderInterface;
 use Pim\Bundle\VersioningBundle\Manager\VersionManager;
 use Pim\Component\Catalog\FamilyVariant\EntityWithFamilyVariantAttributesProvider;
 use Pim\Component\Catalog\Localization\Localizer\AttributeConverterInterface;
+use Pim\Component\Catalog\Model\EntityWithFamilyVariantInterface;
 use Pim\Component\Catalog\Model\ProductModelInterface;
 use Pim\Component\Catalog\Model\ValueInterface;
+use Pim\Component\Catalog\Model\VariantAttributeSetInterface;
+use Pim\Component\Catalog\Model\VariantProductInterface;
 use Pim\Component\Catalog\Repository\LocaleRepositoryInterface;
+use Pim\Component\Catalog\Repository\ProductModelRepositoryInterface;
 use Pim\Component\Catalog\ValuesFiller\EntityWithFamilyValuesFillerInterface;
 use Pim\Component\Enrich\Converter\ConverterInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
@@ -56,6 +60,9 @@ class ProductModelNormalizer implements NormalizerInterface
     /** @var EntityWithFamilyVariantAttributesProvider */
     private $attributesProvider;
 
+    /** @var ProductModelRepositoryInterface */
+    private $productModelRepository;
+
     /**
      * @param NormalizerInterface                       $normalizer
      * @param NormalizerInterface                       $versionNormalizer
@@ -67,6 +74,7 @@ class ProductModelNormalizer implements NormalizerInterface
      * @param LocaleRepositoryInterface                 $localeRepository
      * @param EntityWithFamilyValuesFillerInterface     $entityValuesFiller
      * @param EntityWithFamilyVariantAttributesProvider $attributesProvider
+     * @param ProductModelRepositoryInterface           $productModelRepository
      */
     public function __construct(
         NormalizerInterface $normalizer,
@@ -78,7 +86,8 @@ class ProductModelNormalizer implements NormalizerInterface
         FormProviderInterface $formProvider,
         LocaleRepositoryInterface $localeRepository,
         EntityWithFamilyValuesFillerInterface $entityValuesFiller,
-        EntityWithFamilyVariantAttributesProvider $attributesProvider
+        EntityWithFamilyVariantAttributesProvider $attributesProvider,
+        ProductModelRepositoryInterface $productModelRepository
     ) {
         $this->normalizer            = $normalizer;
         $this->versionNormalizer     = $versionNormalizer;
@@ -90,6 +99,7 @@ class ProductModelNormalizer implements NormalizerInterface
         $this->localeRepository      = $localeRepository;
         $this->entityValuesFiller    = $entityValuesFiller;
         $this->attributesProvider    = $attributesProvider;
+        $this->productModelRepository = $productModelRepository;
     }
 
     /**
@@ -136,6 +146,7 @@ class ProductModelNormalizer implements NormalizerInterface
                 'attributes_for_this_level' => $levelAttributes,
                 'attributes_axes'           => $axesAttributes,
                 'image'                     => $this->normalizeImage($productModel->getImage(), $format, $context),
+                'navigation'                => $this->normalizeNavigation($productModel, $format, $context),
             ] + $this->getLabels($productModel);
 
         return $normalizedProductModel;
@@ -179,5 +190,100 @@ class ProductModelNormalizer implements NormalizerInterface
         }
 
         return $this->fileNormalizer->normalize($data->getData(), $format, $context);
+    }
+
+    /**
+     * Normalize navigation information of the given $productModel.
+     *
+     * @param ProductModelInterface $productModel
+     * @param string                $format
+     * @param array                 $context
+     *
+     * @return array
+     */
+    private function normalizeNavigation(
+        ProductModelInterface $productModel,
+        string $format,
+        array $context = []
+    ): array {
+        $parent = $productModel->getParent();
+        $navigationData = [
+            'own'             => $this->getNavigationInformation($productModel, $format, $context),
+            'parent'          => null,
+            'parent_siblings' => [],
+            'siblings'        => [],
+            'children'        => [],
+        ];
+
+        if (null === $parent) {
+            $children = $this->productModelRepository->findChildrenProductModels($productModel);
+        } else {
+            $children = $this->productModelRepository->findChildrenProducts($productModel);
+        }
+
+        foreach ($children as $child) {
+            $navigationData['children'][] = $this->getNavigationInformation($child, $format, $context);
+        }
+
+        if (null === $parent) {
+            return $navigationData;
+        }
+
+        $siblings = $this->productModelRepository->findSiblingsProductModels($productModel);
+        foreach ($siblings as $sibling) {
+            $navigationData['siblings'][] = $this->getNavigationInformation($sibling, $format, $context);
+        }
+
+        $parentSiblings = $this->productModelRepository->findSiblingsProductModels($parent);
+        foreach ($parentSiblings as $parentSibling) {
+            $navigationData['parent_siblings'][] = $this->getNavigationInformation($parentSibling, $format, $context);
+        }
+
+        $navigationData['parent'] = $this->getNavigationInformation($parent, $format, $context);
+
+        return $navigationData;
+    }
+
+    /**
+     * Returns the navigation information needed by the PEF for the given $entity.
+     * For example:
+     * [
+     *     'axes_values' => '[blue], [xl]',
+     *     'label'       => 'Neon Tshirt Blue XL',
+     *     'image'       => '/img/tshirt_blue.jpg'
+     * ]
+     *
+     * @param EntityWithFamilyVariantInterface $entity
+     * @param string                           $format
+     * @param array                            $context
+     *
+     * @throws \InvalidArgumentException
+     *
+     * @return array
+     */
+    private function getNavigationInformation(
+        EntityWithFamilyVariantInterface $entity,
+        string $format,
+        array $context = []
+    ): array {
+        if (!$entity instanceof ProductModelInterface && !$entity instanceof VariantProductInterface) {
+            throw new \InvalidArgumentException(sprintf(
+                '"%s" or "%s" expected, "%s" received',
+                ProductModelInterface::class,
+                VariantProductInterface::class,
+                get_class($entity)
+            ));
+        }
+
+        $axesValues = [];
+        foreach ($this->attributesProvider->getAxes($entity) as $axisAttribute) {
+            $axesValues[] = (string) $entity->getValue($axisAttribute->getCode());
+        }
+
+        return [
+            'axes_values' => implode(', ', $axesValues),
+            'label'       => $entity->getLabel(),
+            'image'       => $this->normalizeImage($entity->getImage(), $format, $context)
+        ];
     }
 }
