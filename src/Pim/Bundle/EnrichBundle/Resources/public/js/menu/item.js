@@ -79,7 +79,7 @@ define(
              */
             redirect: function (event) {
                 if (!_.has(event, 'extension') || event.extension === this.code) {
-                    router.redirectToRoute(this.getRoute());
+                    router.redirectToRoute(this.getRoute(), this.getRouteParams());
                 }
             },
 
@@ -90,6 +90,15 @@ define(
              */
             getRoute: function () {
                 return this.config.to;
+            },
+
+            /**
+             * Returns the route parameters.
+             *
+             * @returns {Object}
+             */
+            getRouteParams: function () {
+                return this.config.routeParams;
             },
 
             /**
